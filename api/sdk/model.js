@@ -1,29 +1,39 @@
 const tf = require('@tensorflow/tfjs-node');
 
 function normalized(data){ // i & r
-    x1 = (data[0] - 42.773) / 10.33017
-    x2 = (data[1] - 29.9412) / 8.936247
-    x3 = (data[2] - 94.8964) / 8.887377
-
-    return [x1, x2, x3]
+    i = (data[0] - 12.585) / 6.813882
+    r = (data[1] - 51.4795) / 29.151289
+    v = (data[2] - 650.4795) / 552.6351
+    p = (data[3] - 10620.56) / 12152.78
+    return [i, r, v, p]
 }
 
-function denormalized(data){
-    y1 = (data[0] * 16.08198) + 32.2718
-    y2 = (data[1] * 8.918185) + 39.959
-    y3 = (data[2] * 11.79956) + 69.739
+const argFact = (compareFn) => (array) => array.map((el, idx) => [el, idx]).reduce(compareFn)[1]
+const argMax = argFact((min, el) => (el[0] > min[0] ? el : min))
 
-    return [y1, y2, y3]
+function ArgMax(res){
+    label = "NORMAL"
+    cls_data = []
+    for(i=0; i<res.length; i++){
+        cls_data[i] = res[i]
+    }
+    // 
+    
+    if(argMax(cls_data) == 1){
+        label = "OVER VOLTAGE"
+    }if(argMax(cls_data) == 0){
+        label = "DROP VOLTAGE"
+    }
+    return label
 }
 
-
-async function predict(data){
-    let in_dim = 3;
+async function classify(data){
+    let in_dim = 4; // i r v p
     
     data = normalized(data);
     shape = [1, in_dim];
 
-    tf_data = tf.tensor2d(data, shape);
+    tf_data = tf.tensor2d(data, shape)
 
     try{
         // path load in public access => github
